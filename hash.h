@@ -41,7 +41,8 @@ struct MyStringHash {
       // Combine using the hash formula
       HASH_INDEX_T h = 0;
       for (int i = 0; i < 5; ++i) {
-          h += rValues[i] * w[i];
+        std::cout << "w[" << i << "] = " << w[i] << std::endl;
+        h += rValues[i] * w[i];
       }
       return h;
     }
