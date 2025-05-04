@@ -273,7 +273,7 @@ private:
 
     // ADD MORE DATA MEMBERS HERE, AS NECESSARY
     double resizeAlpha_;
-    double numItems_;
+    size_t numItems_;
     // HASH_INDEX_T mIndex_;
 
 };
@@ -343,9 +343,9 @@ void HashTable<K,V,Prober,Hash,KEqual>::insert(const ItemType& p)
         table_[loc] = new HashItem(p);
         ++numItems_;
     } else if (table_[loc]->deleted) {
-        delete table_[loc];
-        table_[loc] = new HashItem(p);
-        ++numItems_;
+        table_[loc]->item = p;
+        table_[loc]->deleted = false;
+        ++numItems_; 
     } else {
         table_[loc]->item.second = p.second; // update
     }
