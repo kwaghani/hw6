@@ -13,8 +13,7 @@ struct Prober {
     // Data members
     HASH_INDEX_T start_;    // initial hash location, h(k)
     HASH_INDEX_T m_;        // table size
-    size_t numProbes_;      // probe attempts for statistic tracking
-    static const HASH_INDEX_T npos = (HASH_INDEX_T)-1; // used to indicate probing failed
+ failed
     void init(HASH_INDEX_T start, HASH_INDEX_T m, const KeyType& key) 
     {
         (void) key;  // avoid unused argument warnings since base class doesn't use key
@@ -43,6 +42,8 @@ struct LinearProber : public Prober<KeyType> {
         return loc;
     }
 };
+
+
 
 // To be completed
 template <typename KeyType, typename Hash2>
@@ -459,23 +460,28 @@ HASH_INDEX_T HashTable<K,V,Prober,Hash,KEqual>::probe(const KeyType& key) const
     HASH_INDEX_T h = hash_(key) % CAPACITIES[mIndex_];
     prober_.init(h, CAPACITIES[mIndex_], key);
 
+    HASH_INDEX_T firstDeleted = npos;
     HASH_INDEX_T loc = prober_.next(); 
     totalProbes_++;
+
     while(Prober::npos != loc)
     {
-        if(nullptr == table_[loc] ) {
-            return loc;
+        if(nullptr == table_[loc]) {
+            // If we found a deleted earlier, use it
+            return (firstDeleted != npos) ? firstDeleted : loc;
         }
-        // fill in the condition for this else if statement which should 
-        // return 'loc' if the given key exists at this location
         else if(!table_[loc]->deleted && kequal_(table_[loc]->item.first, key)) {
             return loc;
         }
+        else if(table_[loc]->deleted && firstDeleted == npos) {
+            firstDeleted = loc;
+        }
+
         loc = prober_.next();
         totalProbes_++;
     }
 
-    return npos;
+    return firstDeleted != npos ? firstDeleted : npos;
 }
 
 // Complete
