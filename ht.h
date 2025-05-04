@@ -274,7 +274,7 @@ private:
     // ADD MORE DATA MEMBERS HERE, AS NECESSARY
     double resizeAlpha_;
     double numItems_;
-    HASH_INDEX_T mIndex_;
+    // HASH_INDEX_T mIndex_;
 
 };
 
