@@ -358,11 +358,10 @@ template<typename K, typename V, typename Prober, typename Hash, typename KEqual
 void HashTable<K,V,Prober,Hash,KEqual>::remove(const KeyType& key)
 {
     HashItem* it = internalFind(key);
-    if (it != nullptr && !it->deleted) {
-        it->deleted = true;
-        --numItems_;
-        ++numDeleted_;
-    }
+    if (it == nullptr || it->deleted) return;
+    it->deleted = true;
+    --numItems_;
+    ++numDeleted_;
 }
 
 
@@ -466,29 +465,29 @@ void HashTable<K,V,Prober,Hash,KEqual>::resize()
 template<typename K, typename V, typename Prober, typename Hash, typename KEqual>
 HASH_INDEX_T HashTable<K,V,Prober,Hash,KEqual>::probe(const KeyType& key) const
 {
+     // start at h1(k)
     HASH_INDEX_T h = hash_(key) % CAPACITIES[mIndex_];
     prober_.init(h, CAPACITIES[mIndex_], key);
 
-    HASH_INDEX_T loc = prober_.next(); 
+    // linear (or double‐hash) probe
+    HASH_INDEX_T loc = prober_.next();
     totalProbes_++;
-
-    HASH_INDEX_T firstDeleted = npos; // Track first deleted slot
-
-    while(Prober::npos != loc)
-    {
-      if(nullptr == table_[loc]) {
-          return (firstDeleted != npos) ? firstDeleted : loc;
-      }
-      else if(!table_[loc]->deleted && kequal_(table_[loc]->item.first, key)) {
-          return loc;
-      }
-      else if(table_[loc]->deleted && firstDeleted == npos) {
-          firstDeleted = loc;
-      }
-      loc = prober_.next();
-      totalProbes_++;
+    while (loc != Prober::npos) {
+        // if truly empty, we can insert here
+        if (table_[loc] == nullptr) {
+            return loc;
+        }
+        // if this slot holds our key, return it
+        else if (!table_[loc]->deleted &&
+                 kequal_(table_[loc]->item.first, key)) {
+            return loc;
+        }
+        // otherwise keep probing
+        loc = prober_.next();
+        totalProbes_++;
     }
-    return firstDeleted != npos ? firstDeleted : npos;
+    // no place to go
+    return npos;
 }
 
 // Complete
